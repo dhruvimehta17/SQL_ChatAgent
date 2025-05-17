@@ -13,12 +13,14 @@ function App() {
   const [data, setData] = useState([]);
   const [explanation, setExplanation] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const askQuestion = async () => {
     setError('');
     setSql('');
     setExplanation('');
     setData([]);
+    setLoading(true);
 
     try {
       const response = await axios.post(`${api}/ask`, { question });
@@ -27,6 +29,8 @@ function App() {
       setData(response.data.rows);
     } catch (err) {
       setError(err.response?.data?.error || 'Something went wrong');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,6 +63,7 @@ function App() {
         </button>
       </div>
 
+      {loading && <p style={{ color: 'blue' }}>⏳ Thinking...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {sql && (
