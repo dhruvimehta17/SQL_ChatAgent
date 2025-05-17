@@ -1,5 +1,11 @@
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./db.sqlite');
+const path = require('path');
+
+const dbPath = process.env.NODE_ENV === 'production'
+  ? '/var/data/db.sqlite'
+  : './db.sqlite';
+
+const db = new sqlite3.Database(dbPath);
 
 db.serialize(() => {
   db.run('DROP TABLE IF EXISTS products');
