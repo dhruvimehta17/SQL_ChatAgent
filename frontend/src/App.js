@@ -5,6 +5,8 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer
 } from 'recharts';
 
+const api = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 function App() {
   const [question, setQuestion] = useState('');
   const [sql, setSql] = useState('');
@@ -19,7 +21,7 @@ function App() {
     setData([]);
 
     try {
-      const response = await axios.post('http://localhost:3001/ask', { question });
+      const response = await axios.post(`${api}/ask`, { question });
       setSql(response.data.sql);
       setExplanation(response.data.explanation);
       setData(response.data.rows);
