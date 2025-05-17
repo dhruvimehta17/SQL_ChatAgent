@@ -3,17 +3,49 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 require('dotenv').config();
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-
-const db = require('./db');
-
-// Automatically seed in-memory DB if in production
-if (process.env.NODE_ENV === 'production') {
-  require('./seed');
-}
+const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+
+const dbPath = process.env.NODE_ENV === 'production' ? ':memory:' : './db.sqlite';
+const db = new sqlite3.Database(dbPath);
+console.log('📦 Using DB at:', dbPath);
+
+// 🌱 Auto-seed SQLite if empty
+db.serialize(() => {
+  db.run(`CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY,
+    name TEXT,
+    category TEXT,
+    price REAL,
+    rating REAL
+  )`);
+
+  db.get('SELECT COUNT(*) as count FROM products', (err, row) => {
+    if (row.count === 0) {
+      console.log('🌱 Seeding in-memory DB...');
+      const stmt = db.prepare('INSERT INTO products VALUES (?, ?, ?, ?, ?)');
+      const data = [
+        [1, 'Product A', 'Electronics', 199.99, 4.2],
+        [2, 'Product B', 'Clothing', 49.99, 3.8],
+        [3, 'Product C', 'Electroniks', 299.99, 4.7],
+        [4, 'Product D', 'Furniture', 499.99, null],
+        [5, 'Product E', 'clothing', 89.99, 3.5],
+        [6, null, 'Furniture', 899.99, 4.9],
+        [7, 'Product G', 'Electronics', 149.99, 4.0],
+        [8, 'Product H', 'Electronics', null, 2.8],
+        [9, 'Product I', 'Clothing', 39.99, 4.3],
+        [10, 'Product J', 'Furnitures', 599.99, 4.4]
+        // You can add the rest of your 50 products here if you want
+      ];
+      data.forEach(row => stmt.run(row));
+      stmt.finalize();
+      console.log('✅ Seeding complete.');
+    }
+  });
+});
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
@@ -35,7 +67,6 @@ Question: "${question}"
 `;
 
   try {
-    // Step 1: Ask GPT (via OpenRouter) to generate SQL
     const sqlResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -64,14 +95,12 @@ Question: "${question}"
 
     console.log('✅ SQL from GPT:', sql);
 
-    // Step 2: Execute the SQL
     db.all(sql, [], async (err, rows) => {
       if (err) {
         console.error('❌ SQL execution error:', err.message);
         return res.status(500).json({ error: err.message, sql });
       }
 
-      // Step 3: Ask GPT to summarize the result
       const summaryPrompt = `
 You are a helpful assistant. Given the SQL query and the rows returned, write a plain English explanation of the result.
 
@@ -101,6 +130,7 @@ Answer (1-2 lines only):`;
 
       res.json({ sql, rows, explanation });
     });
+
   } catch (err) {
     console.error('❌ OpenRouter error:', err.message || err);
     res.status(500).json({ error: 'OpenRouter error' });
