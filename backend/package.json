@@ -1,14 +1,21 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "AI SQL Agent Backend - Node.js + SQLite + OpenRouter",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "postinstall": "npm rebuild sqlite3"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "express",
+    "sqlite3",
+    "ai",
+    "sql",
+    "openrouter"
+  ],
+  "author": "dhruvimehta17",
+  "license": "MIT",
   "dependencies": {
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
