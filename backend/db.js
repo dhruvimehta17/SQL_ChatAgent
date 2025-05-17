@@ -1,10 +1,18 @@
 const sqlite3 = require('sqlite3').verbose();
 
-// Use in-memory database on production (Render Free Plan)
 const dbPath =
   process.env.NODE_ENV === 'production'
     ? ':memory:'
     : './db.sqlite';
 
-const db = new sqlite3.Database(dbPath);
+console.log('📦 Using DB at:', dbPath);
+
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error('❌ Failed to connect to database:', err.message);
+  } else {
+    console.log('✅ Connected to SQLite database.');
+  }
+});
+
 module.exports = db;
