@@ -1,9 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const db = require('./db');
 require('dotenv').config();
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
+const db = require('./db');
+
+// Automatically seed in-memory DB if in production
+if (process.env.NODE_ENV === 'production') {
+  require('./seed');
+}
 
 const app = express();
 app.use(cors());
@@ -29,7 +35,7 @@ Question: "${question}"
 `;
 
   try {
-    // Step 1: Ask OpenRouter to generate the SQL query
+    // Step 1: Ask GPT (via OpenRouter) to generate SQL
     const sqlResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -58,14 +64,14 @@ Question: "${question}"
 
     console.log('✅ SQL from GPT:', sql);
 
-    // Step 2: Run the SQL query on the local SQLite database
+    // Step 2: Execute the SQL
     db.all(sql, [], async (err, rows) => {
       if (err) {
         console.error('❌ SQL execution error:', err.message);
         return res.status(500).json({ error: err.message, sql });
       }
 
-      // Step 3: Ask GPT to summarize the results
+      // Step 3: Ask GPT to summarize the result
       const summaryPrompt = `
 You are a helpful assistant. Given the SQL query and the rows returned, write a plain English explanation of the result.
 
@@ -95,7 +101,6 @@ Answer (1-2 lines only):`;
 
       res.json({ sql, rows, explanation });
     });
-
   } catch (err) {
     console.error('❌ OpenRouter error:', err.message || err);
     res.status(500).json({ error: 'OpenRouter error' });
