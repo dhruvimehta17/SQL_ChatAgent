@@ -31,7 +31,7 @@ Backend: https://sql-chatagent.onrender.com
 - Loading spinner while thinking
 - Fully deployed and production-ready
 
-📂 Folder Structure
+# Folder Structure
 
 SQL_ChatAgent/
 
